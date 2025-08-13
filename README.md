@@ -1,0 +1,2 @@
+# dodo_windows_ini_settings
+初期化したWindowsの設定を自動でいろいろ変えるやつ
