@@ -69,3 +69,37 @@
 
 ### 10. God Mode
 - 全設定にアクセスできるフォルダ「GodMode」をデスクトップに作成
+
+---
+
+## winget 一括インストール
+
+### 使い方
+
+1. `winget-list.txt` にインストールしたいアプリを記述する
+2. PowerShellを管理者権限で起動
+3. 実行:
+   ```powershell
+   .\winget_install.ps1
+   ```
+   別のファイルを指定する場合:
+   ```powershell
+   .\winget_install.ps1 -ListFile "mylist.txt"
+   ```
+
+### winget-list.txt の書き方
+
+```
+# コメントは # で書く
+
+# ID形式（推奨）
+Git.Git
+Microsoft.VisualStudioCode
+
+# 名前形式
+7-Zip
+```
+
+### ログ
+- 実行ログは `%TEMP%\winget_install_log.txt` に保存される
+- 失敗したアプリは最後に一覧表示される

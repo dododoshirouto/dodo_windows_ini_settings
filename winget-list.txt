@@ -1,0 +1,22 @@
+# winget-list.txt サンプル
+# 1行1アプリ、# でコメント
+# ID形式（推奨）: Git.Git
+# 名前形式: Git
+
+# --- 開発ツール ---
+Git.Git
+Microsoft.VisualStudioCode
+# JetBrains.IntelliJIDEA.Community
+
+# --- ブラウザ ---
+Google.Chrome
+# Mozilla.Firefox
+
+# --- ユーティリティ ---
+7zip.7zip
+Microsoft.PowerToys
+Notepad++.Notepad++
+
+# --- フォント ---
+# 名前形式の例
+# Cascadia Code
