@@ -1,22 +1,29 @@
-# winget-list.txt サンプル
-# 1行1アプリ、# でコメント
-# ID形式（推奨）: Git.Git
-# 名前形式: Git
-
 # --- 開発ツール ---
 Git.Git
-Microsoft.VisualStudioCode
-# JetBrains.IntelliJIDEA.Community
+SublimeHQ.SublimeText.4
+OpenJS.NodeJS.LTS
 
 # --- ブラウザ ---
 Google.Chrome
-# Mozilla.Firefox
 
 # --- ユーティリティ ---
 7zip.7zip
 Microsoft.PowerToys
-Notepad++.Notepad++
+GeekUninstaller.GeekUninstaller
+voidtools.Everything
+AntibodySoftware.WizTree
+Apple.Bonjour
+VB-Audio.Voicemeeter
+FastCopy.FastCopy
 
-# --- フォント ---
-# 名前形式の例
-# Cascadia Code
+# EarTrumpet
+9NBLGGH516XP
+
+# --- メディアプレイヤー ---
+VideoLAN.VLC
+
+# --- ネットワークツール ---
+NDI.NDITools
+OBSProject.OBSStudio
+DistroAV.DistroAV
+
