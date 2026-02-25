@@ -19,6 +19,9 @@ FastCopy.FastCopy
 # EarTrumpet
 9NBLGGH516XP
 
+# Apple Device
+9NP83LWLPZ9K
+
 # --- メディアプレイヤー ---
 VideoLAN.VLC
 
@@ -26,4 +29,4 @@ VideoLAN.VLC
 NDI.NDITools
 OBSProject.OBSStudio
 DistroAV.DistroAV
-
+Google.ChromeRemoteDesktopHost
