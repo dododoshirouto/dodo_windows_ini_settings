@@ -141,7 +141,8 @@ $explorerAdvPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Adv
 Set-RegValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0  # 検索ボックス非表示
 Set-RegValue -Path $explorerAdvPath -Name "TaskbarDa"           -Value 0  # ウィジェット非表示
 Set-RegValue -Path $explorerAdvPath -Name "ShowTaskViewButton"  -Value 0  # タスクビュー非表示
-Set-RegValue -Path $explorerAdvPath -Name "TaskbarMn"           -Value 0  # チャット非表示
+Set-RegValue -Path $explorerAdvPath -Name "TaskbarMn"           -Value 0  # チャット非表示 (24H2等だと効かない場合あり)
+Set-RegValue -Path $explorerAdvPath -Name "ShowCopilotButton"   -Value 0  # Copilot非表示
 Set-RegValue -Path $explorerAdvPath -Name "TaskbarAl"           -Value 0  # タスクバーを左寄せ
 
 # ========================
@@ -186,6 +187,27 @@ Set-RegValue -Path $explorerAdvPath                                             
 Set-RegValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"     -Name "Animations"       -Value 0
 
 # ========================
+# 5.5 スタートメニュー・右クリックメニュー (Win11向け)
+# ========================
+Write-Log ""
+Write-Log "[5.5] スタートメニュー・右クリックメニュー設定" -Color Cyan
+
+# スタートメニューの「おすすめ」を非表示
+Set-RegValue -Path $explorerAdvPath -Name "Start_IrisRecommendations" -Value 0
+
+# 右クリックメニュー (コンテキストメニュー) をWindows 10仕様に戻す
+$cmdContextMenuPath = "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32"
+if (-not (Test-Path $cmdContextMenuPath)) {
+    New-Item -Path $cmdContextMenuPath -Force | Out-Null
+}
+try {
+    Set-ItemProperty -Path $cmdContextMenuPath -Name "(default)" -Value "" -Force
+    Write-Log "  [新規/更新] 右クリックメニューの旧仕様化" -Color Yellow
+} catch {
+    Write-Log "  レジストリ設定に失敗したわ: $cmdContextMenuPath -> $_" -IsError
+}
+
+# ========================
 # 6. 視覚効果カスタム設定
 # ========================
 Write-Log ""
@@ -213,14 +235,20 @@ Write-Log ""
 Write-Log "[7] 電源設定" -Color Cyan
 
 $powerPlans = powercfg /list
+if (-not ($powerPlans -match $Config.UltimateGuid)) {
+    Write-Log "  究極のパフォーマンスプランが見つからないから、システムに召喚（復元）するわね。" -Color Yellow
+    powercfg -duplicatescheme $Config.UltimateGuid | Out-Null
+    $powerPlans = powercfg /list
+}
+
 if ($powerPlans -match $Config.UltimateGuid) {
-    Write-Log "  究極のパフォーマンスプランを有効にするわ！" -Color Green
+    Write-Log "  究極のパフォーマンスプランを有効にするわよ！" -Color Green
     powercfg /setactive $Config.UltimateGuid
 } elseif ($powerPlans -match $Config.HighPerfGuid) {
     Write-Log "  高パフォーマンスプランを有効にするわ。"
     powercfg /setactive $Config.HighPerfGuid
 } else {
-    Write-Log "  パフォーマンスプランが見つからなかったわ。" -Color Yellow
+    Write-Log "  パフォーマンスプランの設定に失敗したみたいね。" -Color Red
 }
 
 # 画面タイムアウト（AC・DC両方）を無効化
