@@ -68,17 +68,17 @@ function Set-RegValue {
     )
     try {
         if (-not (Test-Path $Path)) {
-            New-Item -Path $Path -Force | Out-Null
+            New-Item -Path $Path -Force -ErrorAction Stop | Out-Null
         }
         if (-not (Get-ItemProperty -Path $Path -Name $Name -ErrorAction SilentlyContinue)) {
             Write-Log "  [新規] $Name" -Color Yellow
-            New-ItemProperty -Path $Path -Name $Name -Value $Value -PropertyType $Type -Force | Out-Null
+            New-ItemProperty -Path $Path -Name $Name -Value $Value -PropertyType $Type -Force -ErrorAction Stop | Out-Null
         } else {
             Write-Log "  [更新] $Name"
-            Set-ItemProperty -Path $Path -Name $Name -Value $Value -Force
+            Set-ItemProperty -Path $Path -Name $Name -Value $Value -Force -ErrorAction Stop
         }
     } catch {
-        Write-Log "  レジストリ設定に失敗したわ: $Path\$Name -> $_" -IsError
+        Write-Log "  レジストリ設定に失敗したわ(無視して続行): $Path\$Name -> $_" -IsError
     }
 }
 
@@ -139,7 +139,9 @@ Write-Log "[2] タスクバー設定" -Color Cyan
 
 $explorerAdvPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 Set-RegValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 0  # 検索ボックス非表示
+Set-RegValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarModeCache" -Value 0  # 25H2向け強制上書き
 Set-RegValue -Path $explorerAdvPath -Name "TaskbarDa"           -Value 0  # ウィジェット非表示
+Set-RegValue -Path "HKLM:\SOFTWARE\Policies\Microsoft\Dsh"      -Name "AllowNewsAndInterests" -Value 0  # 25H2向けウィジェット強制非表示(GPO)
 Set-RegValue -Path $explorerAdvPath -Name "ShowTaskViewButton"  -Value 0  # タスクビュー非表示
 Set-RegValue -Path $explorerAdvPath -Name "TaskbarMn"           -Value 0  # チャット非表示 (24H2等だと効かない場合あり)
 Set-RegValue -Path $explorerAdvPath -Name "ShowCopilotButton"   -Value 0  # Copilot非表示
@@ -155,6 +157,12 @@ Set-RegValue -Path $explorerAdvPath                                             
 Set-RegValue -Path $explorerAdvPath                                                       -Name "Hidden"             -Value 1  # 隠しファイルを表示
 Set-RegValue -Path $explorerAdvPath                                                       -Name "HideDrivesWithNoMedia" -Value 0  # 空ドライブ表示
 Set-RegValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\CabinetState" -Name "FullPath"          -Value 1  # タイトルバーにフルパスを表示
+
+# 最近使用したファイル/Office.comをオフ
+$explorerCorePath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer"
+Set-RegValue -Path $explorerCorePath -Name "ShowRecent" -Value 0
+Set-RegValue -Path $explorerCorePath -Name "ShowCloudFilesInQuickAccess" -Value 0
+Set-RegValue -Path $explorerAdvPath  -Name "Start_TrackDocs" -Value 0
 
 # ========================
 # 4. スクリーンショット保存先
@@ -180,6 +188,16 @@ Set-RegValue -Path $themePath -Name "EnableTransparency"   -Value 0  # 透明効
 # 壁紙を黒の単色に
 Set-RegValue -Path "HKCU:\Control Panel\Colors"  -Name "Background" -Value "0 0 0" -Type String
 Set-RegValue -Path "HKCU:\Control Panel\Desktop" -Name "Wallpaper"  -Value ""       -Type String
+# 25H2向け: 黒壁紙を確実に反映させるためにキャッシュ(TranscodedWallpaper)を物理削除
+$wallpaperCache = "$env:USERPROFILE\AppData\Roaming\Microsoft\Windows\Themes\TranscodedWallpaper"
+if (Test-Path $wallpaperCache) {
+    try {
+        Remove-Item -Path $wallpaperCache -Force -ErrorAction Stop
+        Write-Log "  壁紙キャッシュを吹き飛ばしたわ。"
+    } catch {
+        Write-Log "  壁紙キャッシュの削除に失敗したわ: $_" -Color Yellow
+    }
+}
 
 # アニメーション効果オフ
 Set-RegValue -Path "HKCU:\Control Panel\Desktop\WindowMetrics"                             -Name "MinAnimate"       -Value "0" -Type String
@@ -237,7 +255,8 @@ Write-Log "[7] 電源設定" -Color Cyan
 $powerPlans = powercfg /list
 if (-not ($powerPlans -match $Config.UltimateGuid)) {
     Write-Log "  究極のパフォーマンスプランが見つからないから、システムに召喚（復元）するわね。" -Color Yellow
-    powercfg -duplicatescheme $Config.UltimateGuid | Out-Null
+    $out = powercfg -duplicatescheme $Config.UltimateGuid
+    Write-Log "  powercfg 出力: $out"
     $powerPlans = powercfg /list
 }
 
@@ -286,6 +305,28 @@ if (-not (Test-Path $Config.GodModePath)) {
 } else {
     Write-Log "  God Mode フォルダは既に存在するわ。"
 }
+
+# ========================
+# 11. 通知・ヒント設定
+# ========================
+Write-Log ""
+Write-Log "[11] 通知・ヒント・おすすめの無効化" -Color Cyan
+
+$cdmPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+Set-RegValue -Path $cdmPath -Name "SubscribedContent-338389Enabled" -Value 0
+
+# アプリ毎の通知 (OneDrive, Defender)
+Set-RegValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Microsoft.SkyDrive.Desktop" -Name "Enabled" -Value 0
+Set-RegValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\Windows.Defender.SecurityCenter" -Name "Enabled" -Value 0
+
+# ========================
+# 12. サインイン設定
+# ========================
+Write-Log ""
+Write-Log "[12] サインイン設定" -Color Cyan
+
+# 再起動可能なアプリを自動的に保存し… をオフ
+Set-RegValue -Path "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "RestartApps" -Value 0
 
 # ========================
 # 仕上げ：エクスプローラー再起動
