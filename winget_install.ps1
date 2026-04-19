@@ -1,4 +1,4 @@
-# -----------------------------------------------------------------------------
+﻿# -----------------------------------------------------------------------------
 # winget 一括インストールスクリプト
 # 使い方:
 #   1. winget-list.txt にインストールしたいアプリを1行1アプリで記述
@@ -88,11 +88,11 @@ foreach ($line in $lines) {
     if ($trimmed -match "^[\w][\w\-]*\.[\w][\w\-\.]*$") {
         # ID形式 (例: Git.Git, Microsoft.VisualStudioCode)
         Write-Log "  -> ID形式で検索するわ"
-        $result = winget install --id $trimmed --silent --accept-package-agreements --accept-source-agreements 2>&1
+        $result = winget install --id $trimmed --source winget --silent --accept-package-agreements --accept-source-agreements 2>&1
     } else {
         # 名前形式
         Write-Log "  -> 名前形式で検索するわ"
-        $result = winget install --name $trimmed --silent --accept-package-agreements --accept-source-agreements 2>&1
+        $result = winget install --name $trimmed --source winget --silent --accept-package-agreements --accept-source-agreements 2>&1
     }
 
     $output = $result | Out-String
